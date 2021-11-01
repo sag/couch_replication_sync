@@ -1,0 +1,26 @@
+{
+  "name": "couch_replication_sync",
+  "version": "0.0.1",
+  "description": "Ensure all databases on one couchdb cluster is replicated to a second.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sag/couch_replication_sync.git"
+  },
+  "keywords": [
+    "couchdb"
+  ],
+  "author": "Stephen Gregory",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sag/couch_replication_sync/issues"
+  },
+  "homepage": "https://github.com/sag/couch_replication_sync#readme",
+  "dependencies": {
+    "axios": "^0.24.0"
+  }
+}
