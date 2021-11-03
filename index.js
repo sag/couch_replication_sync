@@ -36,14 +36,11 @@ const DEFAULT_IGNORE_LIST = {
 console.log(TARGET_URL);
 
 async function getDbsPage(url, auth, page) {
-  console.log("getting page");
   let offset = page * PAGE_SIZE;
   let res = await axios.get(
     `${url}/_all_dbs?limit=${PAGE_SIZE}&skip=${offset}`,
     auth
   );
-  console.debug(`request ${url} page: ${page} res size: ${res.data.length}`);
-  console.debug(res);
   return res.data;
 }
 
