@@ -36,12 +36,14 @@ const DEFAULT_IGNORE_LIST = {
 console.log(TARGET_URL);
 
 async function getDbsPage(url, auth, page) {
+  console.log("getting page");
   let offset = page * PAGE_SIZE;
   let res = await axios.get(
     `${url}/_all_dbs?limit=${PAGE_SIZE}&skip=${offset}`,
     auth
   );
-  console.log(`request ${url} page: ${page} res size: ${res.data.length}`);
+  console.debug(`request ${url} page: ${page} res size: ${res.data.length}`);
+  console.debug(res);
   return res.data;
 }
 
@@ -53,7 +55,7 @@ async function getDbs(url, auth) {
     pageResult = await getDbsPage(url, auth, page);
     page += 1;
     dbList = dbList.concat(pageResult);
-  } while (pageResult && pageResult.length == PAGE_SIZE);
+  } while (pageResult && pageResult.length >= PAGE_SIZE-1);
 
   return dbList;
 }
@@ -115,7 +117,7 @@ const check = async () => {
         } catch (e) {
           console.log(`Error creating replication for ${db}`);
           if (e.isAxiosError) {
-            console.log(
+            console.debug(
               `AXIOS error: ${e.response.status}, ${e.response.statusText}`
             );
           }
