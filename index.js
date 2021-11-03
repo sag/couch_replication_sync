@@ -41,6 +41,7 @@ async function getDbsPage(url, auth, page) {
     `${url}/_all_dbs?limit=${PAGE_SIZE}&skip=${offset}`,
     auth
   );
+  console.log(`request ${url} page: ${page} res size: ${res.data.length}`);
   return res.data;
 }
 
@@ -81,7 +82,7 @@ const replicationDoc = (db) => {
 };
 
 async function createReplication(db) {
-  return axios.post(
+  return await axios.post(
     `${TARGET_URL}/_replicator`,
     replicationDoc(db),
     TARGET_AUTH
@@ -95,22 +96,32 @@ const check = async () => {
     let targetIdMap = Object.assign({}, DEFAULT_IGNORE_LIST);
     targetDbs = await targetDbs;
     srcDbs = await srcDbs;
-    targetDbs.forEach((db) => {
+
+    for (let i = 0; i < (await targetDbs).length; i++) {
+      let db = targetDbs[i];
       targetIdMap[db] = true;
-    });
-    for(let i = 0; i < (await srcDbs).length ; i++){
+    }
+    console.log(`target size: ${(await targetDbs).length}`);
+
+    for (let i = 0; i < (await srcDbs).length; i++) {
       let db = srcDbs[i];
       if (!targetIdMap[db]) {
         console.debug(`Found unreplicated db : ${db} -- creating replicator`);
-        try{
-        let replicationResult = await createReplication(db);
-        console.debug(`Replication for ${db} completed with status ${replicationResult.status} ${replicationResult.statusText}`);
-        } catch(e){
+        try {
+          let replicationResult = await createReplication(db);
+          console.debug(
+            `Replication for ${db} completed with status ${replicationResult.status} ${replicationResult.statusText}`
+          );
+        } catch (e) {
           console.log(`Error creating replication for ${db}`);
-          console.log(e);
+          if (e.isAxiosError) {
+            console.log(
+              `AXIOS error: ${e.response.status}, ${e.response.statusText}`
+            );
+          }
         }
       }
-    };
+    }
   } catch (ex) {
     console.debug(ex);
   }
