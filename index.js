@@ -98,13 +98,19 @@ const check = async () => {
     targetDbs.forEach((db) => {
       targetIdMap[db] = true;
     });
-    srcDbs.forEach(async (db) => {
+    for(let i = 0; i < (await srcDbs).length ; i++){
+      let db = srcDbs[i];
       if (!targetIdMap[db]) {
         console.debug(`Found unreplicated db : ${db} -- creating replicator`);
+        try{
         let replicationResult = await createReplication(db);
         console.debug(`Replication for ${db} completed with status ${replicationResult.status} ${replicationResult.statusText}`);
+        } catch(e){
+          console.log(`Error creating replication for ${db}`);
+          console.log(e);
+        }
       }
-    });
+    };
   } catch (ex) {
     console.debug(ex);
   }
