@@ -1,5 +1,4 @@
 import axios from "axios";
-
 const {
   TARGET_URL,
   TARGET_USER,
@@ -9,7 +8,7 @@ const {
   SRC_PASSWORD,
 } = process.env;
 
-const PAGE_SIZE = parseInt(process.env.PAGE_SIZE, 10) || 100;
+const PAGE_SIZE = 1000;
 //defaults to 1 minute
 const CHECK_INTERVAL = parseInt(process.env.CHECK_INTERVAL, 10) || 60000;
 
@@ -35,6 +34,34 @@ const DEFAULT_IGNORE_LIST = {
 
 console.log(TARGET_URL);
 
+async function getReplicatorsPage(url, auth, page) {
+  let offset = page * PAGE_SIZE;
+  let res = await axios.get(
+    `${url}/_replicator/_all_docs?limit=${PAGE_SIZE}&skip=${offset}`,
+    auth
+  );
+  return res.data.rows;
+}
+
+async function getReplicators(url, auth) {
+  let page = 0;
+  let pageResult = null;
+  let dbList = [];
+  do {
+    pageResult = await getReplicatorsPage(url, auth, page);
+    page += 1;
+    let docKeys = pageResult.flatMap(db => {
+       if (db.key){
+         return db.key
+       }else{
+          return null;
+       }
+    });
+    dbList = dbList.concat(docKeys);
+  } while (pageResult && pageResult.length >= PAGE_SIZE);
+
+  return dbList;
+}
 async function getDbsPage(url, auth, page) {
   let offset = page * PAGE_SIZE;
   let res = await axios.get(
@@ -90,7 +117,7 @@ async function createReplication(db) {
 
 const check = async () => {
   try {
-    let targetDbs = getDbs(TARGET_URL, TARGET_AUTH);
+    let targetDbs = getReplicators(TARGET_URL, TARGET_AUTH);
     let srcDbs = getDbs(SRC_URL, SRC_AUTH);
     let targetIdMap = Object.assign({}, DEFAULT_IGNORE_LIST);
     targetDbs = await targetDbs;
@@ -100,14 +127,15 @@ const check = async () => {
       let db = targetDbs[i];
       targetIdMap[db] = true;
     }
+
     console.log(`target size: ${(await targetDbs).length}`);
 
     for (let i = 0; i < (await srcDbs).length; i++) {
       let db = srcDbs[i];
-      if (!targetIdMap[db]) {
-        console.debug(`Found unreplicated db : ${db} -- creating replicator`);
+      if (!targetIdMap[db] && !targetIdMap[db+"_rep"]) {
+        console.debug(`Found unreplicated db : ${db} `);
         try {
-          let replicationResult = await createReplication(db);
+          let replicationResult = await createReplication(db);  
           console.debug(
             `Replication for ${db} completed with status ${replicationResult.status} ${replicationResult.statusText}`
           );
@@ -119,6 +147,8 @@ const check = async () => {
             );
           }
         }
+      }else{
+
       }
     }
   } catch (ex) {
